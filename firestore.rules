@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUser(data) {
+      return data.uid is string &&
+             data.uid == request.auth.uid &&
+             data.email is string &&
+             data.email.size() > 3 &&
+             data.email.size() <= 254 &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+             (!('plan' in data) || data.plan in ['free', 'pro', 'ultra']) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50)) &&
+             (!('lastLoginAt' in data) || (data.lastLoginAt is string && data.lastLoginAt.size() <= 50));
+    }
+
+    // User profile documents - private to owner
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false; // Users can only access their own document directly
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       request.resource.data.keys().hasAll(['uid', 'email', 'createdAt']) &&
+                       isValidUser(request.resource.data);
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       request.resource.data.uid == resource.data.uid &&
+                       isValidUser(request.resource.data);
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+  }
+}

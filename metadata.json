@@ -1,0 +1,7 @@
+{
+  "name": "OmniCraft AI Studio",
+  "description": "All-in-one AI platform to build & publish apps, websites with free custom domains, Play Store & App Store deployment, AI videos, photos, chat, and subscriptions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
